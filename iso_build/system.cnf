@@ -1,0 +1,4 @@
+BOOT	= cdrom:\SLUS_034.34;1
+TCB		= 4
+EVENT	= 16
+STACK	= 0x80010000
