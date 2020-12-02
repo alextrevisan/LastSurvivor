@@ -1,4 +1,4 @@
-# ps1unity
+# LastSurvivor
 Simple game in C++ for PS1 using PSn00bSDK
 
 
