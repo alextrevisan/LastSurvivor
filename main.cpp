@@ -15,6 +15,12 @@
 #include "camera.h"
 
 #include <Map.h>
+/*
+#include "meshs/tile_stone.h"
+#include "meshs/tile_dirt.h"
+#include "meshs/tile_dirtgrass.h"
+#include "meshs/tile_grasstop.h"*/
+
 #include "animated/character1.h"
 // OT and Packet Buffer sizes
 #define OT_LEN			1024
@@ -431,6 +437,7 @@ int main() {
 		// Draw the floor
 		pol4 = (POLY_F3*)db_nextpri;
 
+
 		const auto position = camera.Position().vx/2000.0f;
 		FntPrint(-1, "IDX=%d\n", camera.Position().vx);
 
@@ -464,6 +471,7 @@ int main() {
 		
 		pol4 = renderMesh(&mtx, &mapMesh.mesh[0], &mapMesh.normals[0], &mapMesh.colors[0], &mapMesh.sizes[0], mapMesh.count, p, pol4, mapPos, charRot);
 		fps_measure++;
+		
 		
 		// Update nextpri variable (very important)
 		db_nextpri = (char*)pol4;
