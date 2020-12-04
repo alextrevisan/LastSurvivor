@@ -15,12 +15,6 @@
 #include "camera.h"
 
 #include <Map.h>
-/*
-#include "meshs/tile_stone.h"
-#include "meshs/tile_dirt.h"
-#include "meshs/tile_dirtgrass.h"
-#include "meshs/tile_grasstop.h"*/
-
 #include "animated/character1.h"
 // OT and Packet Buffer sizes
 #define OT_LEN			1024
@@ -34,12 +28,11 @@
 #define CENTERX			SCREEN_XRES>>1
 #define CENTERY			SCREEN_YRES>>1
 
-//#include <array.h>
 // Double buffer structure
 typedef struct {
 	DISPENV	disp;			// Display environment
 	DRAWENV	draw;			// Drawing environment
-	unsigned int 	ot[OT_LEN];		// Ordering table
+	unsigned int ot[OT_LEN];		// Ordering table
 	char 	p[PACKET_LEN];	// Packet buffer
 } DB;
 
@@ -115,15 +108,19 @@ MATRIX light_mtx = {
 	0 , 0 , 0
 };
 
+extern unsigned int tim_image[];
+TIM_IMAGE tim;
+
+extern unsigned int grass_64[];
+TIM_IMAGE tim_grass;
 
 // Function declarations
 void init();
 void display();
 
 void sort_cube(MATRIX *mtx, VECTOR *pos, SVECTOR *rot);
-PerlinNoise perlin;
 
-POLY_F3 *renderTriangle(const SVECTOR* tri, const SVECTOR* normal, const CVECTOR& color, POLY_F3* pol4)
+POLY_FT3 *renderTriangle(const SVECTOR* tri, const SVECTOR* normal, const CVECTOR& color, POLY_FT3* pol4)
 {
 	int p;
 	gte_ldv3(&tri[0], &tri[1], &tri[2] );
@@ -145,7 +142,7 @@ POLY_F3 *renderTriangle(const SVECTOR* tri, const SVECTOR* normal, const CVECTOR
 		return pol4;
 
 	// Initialize a quad primitive
-	setPolyF3( pol4 );
+	setPolyFT3( pol4 );
 
 	// Set the projected vertices to the primitive
 	gte_stsxy0( &pol4->x0 );
@@ -178,19 +175,31 @@ POLY_F3 *renderTriangle(const SVECTOR* tri, const SVECTOR* normal, const CVECTOR
 	gte_avsz4();
 	gte_stotz( &p );
 
+	// Set tpage
+	pol4->tpage = getTPage(tim_grass.mode&0x8, 0, tim_grass.prect->x, tim_grass.prect->y);
 	
+	// Set CLUT
+	setClut(pol4, tim_grass.crect->x, tim_grass.crect->y);
+	
+	// Set texture coordinates
+	constexpr auto U_out = 0;
+	constexpr auto V_out = 0;
+	constexpr auto W_out = 64;
+	constexpr auto H_out = 64;
+	setUV3(pol4, U_out+W_out,V_out, U_out+W_out,V_out+H_out, U_out,V_out);
+
 	addPrim( db[db_active].ot+(p>>2), pol4 );
 	pol4++;
 	return pol4;
 }
 
 template<typename T>
-static inline POLY_F3* renderMesh(MATRIX* mtx, const T& model, int& p, POLY_F3* pol4, VECTOR& pos, SVECTOR& rot)
+static inline POLY_FT3* renderMesh(MATRIX* mtx, const T& model, int& p, POLY_FT3* pol4, VECTOR& pos, SVECTOR& rot)
 {
 	return renderMesh(mtx, &model.mesh[0], &model.normals[0], &model.colors[0], &model.sizes[0], model.count, p, pol4, pos, rot);
 }
 
-static POLY_F3* renderMesh(MATRIX* mtx, const SVECTOR* mesh, const SVECTOR* normals, const CVECTOR* colors, const int* sizes, int count, int& p, POLY_F3* pol4, VECTOR& pos, SVECTOR& rot)
+static POLY_FT3* renderMesh(MATRIX* mtx, const SVECTOR* mesh, const SVECTOR* normals, const CVECTOR* colors, const int* sizes, int count, int& p, POLY_FT3* pol4, VECTOR& pos, SVECTOR& rot)
 {
 	/* Set rotation and translation to the matrix */
 	//SVECTOR rot{0,0,0,0};	
@@ -268,7 +277,7 @@ int main() {
 	
 	PADTYPE *pad;			// Pad structure pointer for parsing controller
 	
-	POLY_F3	*pol4;			// Flat shaded quad primitive pointer
+	POLY_FT3	*pol4;			// Flat shaded quad primitive pointer
 	const auto SEED = 16;
 	srand(SEED);
 	int rands[SEED];
@@ -435,10 +444,10 @@ int main() {
 		MATRIX mtx = camera.Matrix();	
 		
 		// Draw the floor
-		pol4 = (POLY_F3*)db_nextpri;
+		pol4 = (POLY_FT3*)db_nextpri;
 
 
-		const auto position = camera.Position().vx/2000.0f;
+		const auto position = camera.Position().vx/2000;
 		FntPrint(-1, "IDX=%d\n", camera.Position().vx);
 
 		FntPrint(-1, "FPS=%d\n", fps);
@@ -683,6 +692,14 @@ void init() {
 	// Load font and open a text stream
 	FntLoad(960, 0);
 	FntOpen(0, 8, 320, 216, 0, 100);
+
+	GetTimInfo(grass_64, &tim_grass);
+	
+	LoadImage(tim_grass.prect, tim_grass.paddr);
+	DrawSync(0);
+	
+	LoadImage(tim_grass.crect, tim_grass.caddr);
+	DrawSync(0);
 	
 }
 
