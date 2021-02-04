@@ -34,7 +34,7 @@
 #define CLIP_TOP	4
 #define CLIP_BOTTOM	8
 
-int test_clip(RECT *clip, short x, short y) {
+int test_clip(const RECT *clip, short x, short y) {
 	
 	// Tests which corners of the screen a point lies outside of
 	
@@ -60,7 +60,7 @@ int test_clip(RECT *clip, short x, short y) {
 	
 }
 
-int tri_clip(RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2) {
+int tri_clip(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2) {
 	
 	// Returns non-zero if a triangle is outside the screen boundaries
 	

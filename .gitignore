@@ -2,3 +2,5 @@
 .vscode
 bios/*.BIN
 build
+bin
+iso

@@ -1,4 +1,4 @@
-#ifndef _CLIP_H
+    #ifndef _CLIP_H
 #define _CLIP_H
 
 #include <psxgte.h>
@@ -12,7 +12,7 @@
  * v0,v1,v2		- Triangle coordinates
  *
  */
-int tri_clip(RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2);
+int tri_clip(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2);
 
 /* quad_clip
  *
@@ -22,6 +22,6 @@ int tri_clip(RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2);
  * v0,v1,v2,v3	- Quad coordinates
  *
  */
-int quad_clip(RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2, DVECTOR *v3);
+int quad_clip(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2, DVECTOR *v3);
 
 #endif // _CLIP_H

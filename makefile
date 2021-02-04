@@ -40,7 +40,7 @@ LIBDIRS		+=
 LIBS		= -lpsxgpu -lpsxgte -lpsxspu -lpsxetc -lpsxapi -lc
 
 # C compiler flags
-CFLAGS		= -g -O3 -fno-builtin -fdata-sections -ffunction-sections -Wno-narrowing
+CFLAGS		= -O3 -fno-builtin -fdata-sections -ffunction-sections -Wno-narrowing -march=r3000 -mtune=r3000
 
 # C++ compiler flags
 CPPFLAGS	= $(CFLAGS) -fno-exceptions \
@@ -49,13 +49,14 @@ CPPFLAGS	= $(CFLAGS) -fno-exceptions \
 						-fno-threadsafe-statics \
 						-fno-use-cxa-atexit \
 						-Wno-narrowing \
-						-std=c++17
+						-fconcepts-ts \
+						-std=c++20
 						
 # Assembler flags
-AFLAGS		= -g -msoft-float
+AFLAGS		= -msoft-float
 
 # Linker flags
-LDFLAGS		= -g -Ttext=0x80010000 -gc-sections \
+LDFLAGS		= -Ttext=0x80010000 -gc-sections \
 			-T $(GCC_BASE)/mipsel-unknown-elf/lib/ldscripts/elf32elmip.x
 
 # Toolchain programs
