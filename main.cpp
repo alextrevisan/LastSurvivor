@@ -3,6 +3,8 @@
 #include <psxgte.h>
 #include <inline_c.h>
 #include <Graphics.h>
+#include <Joystick.h>
+#include <TextureManager.h>
 
 /* Cube vertices */
 SVECTOR cube_verts[] = {
@@ -61,11 +63,48 @@ MATRIX light_mtx = {
 	0	  , 0	  , 0
 };
 
+extern unsigned int tim_image[];
+TIM_IMAGE tim_grass;
 
 /* Function declarations */
 void init();
 void display();
+struct UV
+{
+	unsigned char U,V,W,H;
+};
 
+struct ModelFlatShadedTextured
+{
+	SVECTOR vertices[8] = {
+		{ -100, -100, -100, 0 },
+		{  100, -100, -100, 0 },
+		{ -100,  100, -100, 0 },
+		{  100,  100, -100, 0 },
+		{  100, -100,  100, 0 },
+		{ -100, -100,  100, 0 },
+		{  100,  100,  100, 0 },
+		{ -100,  100,  100, 0 }
+	};
+	SVECTOR normals[8] = {
+		{ 0, 0, -ONE, 0 },
+		{ 0, 0, ONE, 0 },
+		{ 0, -ONE, 0, 0 },
+		{ 0, ONE, 0, 0 },
+		{ -ONE, 0, 0, 0 },
+		{ ONE, 0, 0, 0 }
+	};
+	INDEX vertices_index[8] = {
+		{ 0, 1, 2, 3 },
+		{ 4, 5, 6, 7 },
+		{ 5, 4, 0, 1 },
+		{ 6, 7, 3, 2 },
+		{ 0, 2, 5, 7 },
+		{ 3, 1, 6, 4 }
+	};
+	TIM_IMAGE* image;
+
+};
 
 /* Main function */
 int main() {
@@ -82,7 +121,14 @@ int main() {
 	/* Init graphics and GTE */
 	graphics->SetResolution(320,240);
 	gte_SetColorMatrix( &color_mtx );
-	
+
+	FntLoad(960, 0);
+	FntOpen(0, 8, 320, 216, 0, 100);
+	DrawSync(0);
+
+	TextureManager::LoadTexture(tim_image, tim_grass);
+
+	Joystick joystick = Joystick();
 	
 	/* Main loop */
 	while( 1 ) {
@@ -102,29 +148,55 @@ int main() {
 		/* Set light matrix */
 		gte_SetLightMatrix( &lmtx );
 		
+
+		if(joystick.Status() == 0)
+		{
+			if( joystick.IsDigital() || joystick.IsAnalog() || joystick.IsDualshock() )
+			{
+				if(joystick.IsPressed(PAD_LEFT))
+				{
+					rot.vy += 8;
+				}
+				if(joystick.IsPressed(PAD_RIGHT))
+				{
+					rot.vy -= 8;
+				}
+
+				if(joystick.IsPressed(PAD_DOWN))
+				{
+					rot.vx += 8;
+				}
+				if(joystick.IsPressed(PAD_UP))
+				{
+					rot.vx -= 8;
+				}
+			}
+			//rot.vx += joystick.LeftStickX() - 128;
+		}
+
+		FntPrint(-1, "BUTTONS=%d\n", joystick.IsDigital());
+		FntFlush(-1);		
+
 		/* Make the cube SPEEN */
-		rot.vx += 1;
-		rot.vz += 1;
+		
+		//rot.vz += 8;
 		
 	
 		
-		/*for( i=0; i<CUBE_FACES; i++ ) {
+		for( i=0; i<CUBE_FACES; i++ ) {
 			
-			graphics->DrawFast<POLY_F4>(
+			graphics->Draw<POLY_FT4>(
 				{cube_verts[cube_indices[i].v0]	,
 				cube_verts[cube_indices[i].v1],
 				cube_verts[cube_indices[i].v2],
 				cube_verts[cube_indices[i].v3]},
-				cube_norms[i]
+				cube_norms[i],
+				&tim_grass
 			);
-		}*/
+		}
 
-		graphics->DrawFast<POLY_F4>(cube_verts, cube_indices, cube_norms, CUBE_FACES);
-		
-		/* Update nextpri variable */
-		/* (IMPORTANT if you plan to sort more primitives after this) */
-		//graphics->SetPri((u_char*)pol4);
-		
+		//graphics->DrawFast<POLY_F4>(cube_verts, cube_indices, cube_norms, CUBE_FACES);
+
 		/* Swap buffers and draw the primitives */
 		graphics->Display<true>();
 		

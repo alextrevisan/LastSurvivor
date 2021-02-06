@@ -376,6 +376,8 @@ public:
 			gte_avsz4();
 		else if constexpr (is_same<PolygonType, POLY_FT3>::value)
 			gte_avsz3();
+		else if constexpr (is_same<PolygonType, POLY_FT4>::value)
+			gte_avsz4();
 
 		gte_stotz(&p);
 
@@ -384,7 +386,7 @@ public:
 		if (((p >> 2) <= 0) || (p >> 2) >= OT_LEN)
 			return;
 
-		const PolygonType *polygon = (PolygonType *)GetNextPri();
+		PolygonType *polygon = (PolygonType *)GetNextPri();
 		/* Initialize the primitive */
 		if constexpr (is_same<PolygonType, POLY_F4>::value)
 			setPolyF4(polygon);
@@ -392,6 +394,8 @@ public:
 			setPolyF3(polygon);
 		if constexpr (is_same<PolygonType, POLY_FT3>::value)
 			setPolyFT3(polygon);
+		if constexpr (is_same<PolygonType, POLY_FT4>::value)
+			setPolyFT4(polygon);
 
 		/* Set the projected vertices to the primitive */
 		gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
@@ -403,7 +407,7 @@ public:
 					 (DVECTOR *)&polygon->x2))
 			return;
 
-		if constexpr (is_same<PolygonType, POLY_F4>::value)
+		if constexpr (is_same<PolygonType, POLY_F4>::value || is_same<PolygonType, POLY_FT4>::value)
 		{
 			/* Compute the last vertex and set the result */
 			gte_ldv0(&values[3]);
@@ -426,7 +430,7 @@ public:
 		/* Store result to the primitive */
 		gte_strgb(&polygon->r0);
 
-		if constexpr(is_same<PolygonType, POLY_FT3>::value)
+		if constexpr(is_same<PolygonType, POLY_FT3>::value || is_same<PolygonType, POLY_FT4>::value)
 		{
 			gte_avsz4();
 			gte_stotz( &p );
@@ -442,7 +446,8 @@ public:
 			constexpr auto V_out = 0;
 			constexpr auto W_out = 64;
 			constexpr auto H_out = 64;
-			setUV3(polygon, U_out+W_out,V_out, U_out+W_out,V_out+H_out, U_out,V_out);
+			//setUV3(polygon, U_out+W_out,V_out, U_out+W_out,V_out+H_out, U_out,V_out);
+			setUVWH(polygon, 0, 0, 64, 64);
 		}
 
 		/* Sort primitive to the ordering table */
