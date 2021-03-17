@@ -13,19 +13,22 @@ ISO_FOLDER  = iso
 EMUBIN = D:\\Games\\Emuladores\\Playstation\\ePSXe.exe
 EMU_CMD = $(EMUBIN) -nogui -loadbin iso/$(TARGET).34.LastSurvivor.cue
 
-#ENGINE
-ENGINE_DIR = engine
-
 # Searches for C, C++ and S (assembler) files in local directory
 CFILES		= $(notdir $(wildcard *.c))
 CPPFILES 	= $(notdir $(wildcard *.cpp))
 AFILES		= $(notdir $(wildcard *.s))
 
-CPPENGINE =  $(notdir $(wildcard $(ENGINE_DIR)/*.cpp))
+#UI
+UI_DIR = ui
+UI =  $(notdir $(wildcard $(UI_DIR)/*.s))
+UIFILES = $(addprefix build/$(UI_DIR)/,$(UI:.s=.o)) \
 
-# Determine object files
-#ENGINEFILES = $(addprefix build/engine/,$(CPPENGINE:.cpp=.o))
+#ENGINE
+ENGINE_DIR = engine
+ENGINE =  $(notdir $(wildcard $(ENGINE_DIR)/*.cpp))
+ENGINEFILES = $(addprefix build/$(ENGINE_DIR)/,$(ENGINE:.cpp=.o))
 
+#MAIN
 OFILES		= $(addprefix build/,$(CFILES:.c=.o)) \
 			$(addprefix build/,$(CPPFILES:.cpp=.o)) \
 			$(addprefix build/,$(AFILES:.s=.o)) 
@@ -33,7 +36,7 @@ OFILES		= $(addprefix build/,$(CFILES:.c=.o)) \
 
 # Project specific include and library directories
 # (use -I for include dirs, -L for library dirs)
-INCLUDE	 	+=	-I. -Iengine/include -Iengine/include/containers -Iengine/include/algorithm -Iengine/include/c++
+INCLUDE	 	+=	-I. -Iscenario -I$(ENGINE_DIR) -I$(UI_DIR)
 LIBDIRS		+=
 
 # Libraries to link
@@ -65,9 +68,9 @@ CXX			= $(PREFIX)g++
 AS			= $(PREFIX)as
 LD			= $(PREFIX)ld
 
-all: $(OFILES) $(ENGINEFILES)
+all: $(OFILES) $(UIFILES) $(ENGINEFILES)
 	@mkdir -p $(BIN_FOLDER)
-	$(LD) $(LDFLAGS) $(LIBDIRS) $(OFILES) $(ENGINEFILES) $(LIBS)  -o bin/$(TARGET)
+	$(LD) $(LDFLAGS) $(LIBDIRS) $(OFILES) $(UIFILES) $(ENGINEFILES) $(LIBS)  -o bin/$(TARGET)
 	elf2x -q $(BIN_FOLDER)/$(TARGET) $(BIN_FOLDER)/$(TARGET).exe
 	elf2x -q $(BIN_FOLDER)/$(TARGET) $(BIN_FOLDER)/$(TARGET).34
 
@@ -92,16 +95,6 @@ build/%.o: %.cpp
 build/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(CC) $(AFLAGS) $(INCLUDE) -c $< -o $@
-
-
-	
-build/engine/%.o: %.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(AFLAGS) $(CPPFLAGS) $(INCLUDE) -c $< -o $@
-
-
-
-
 
 clean:
 	rm -rf build $(BIN_FOLDER) $(ISO_FOLDER) *.bin *.cue

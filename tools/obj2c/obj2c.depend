@@ -1,0 +1,48 @@
+# depslib dependency file v1.0
+1613226519 source:d:\dev2021\lastsurvivor\tools\obj2c\main.cpp
+	<iostream>
+	<filesystem>
+	<fstream>
+	"Args.h"
+	"obj2c.h"
+
+1613226458 d:\dev2021\lastsurvivor\tools\obj2c\include\obj2c.h
+	<iostream>
+	<filesystem>
+	<fstream>
+	<vector>
+
+1613235744 source:d:\dev2021\lastsurvivor\tools\obj2c\src\obj2c.cpp
+	"obj2c.h"
+	<cmath>
+
+1612653782 source:d:\dev2021\lastsurvivor\tools\obj2c\args.cpp
+	"Args.h"
+
+1612671049 d:\dev2021\lastsurvivor\tools\obj2c\args.h
+	<string>
+	<vector>
+	<algorithm>
+
+1615003701 source:d:\itch.io\2021-03-05\game\tools\obj2c\main.cpp
+	<iostream>
+	<filesystem>
+	<fstream>
+	"Args.h"
+	"obj2c.h"
+
+1612671049 d:\itch.io\2021-03-05\game\tools\obj2c\args.h
+	<string>
+	<vector>
+	<algorithm>
+
+1613226458 d:\itch.io\2021-03-05\game\tools\obj2c\include\obj2c.h
+	<iostream>
+	<filesystem>
+	<fstream>
+	<vector>
+
+1615004451 source:d:\itch.io\2021-03-05\game\tools\obj2c\src\obj2c.cpp
+	"obj2c.h"
+	<cmath>
+
