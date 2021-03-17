@@ -6,5 +6,10 @@ Simple game for PlayStation 1 using PSn00bSDK and modern C++
 * Day/night cycle
 * Terrain light from the sun
 
+## Screenshots
+
+![](screenshots/screenshot1.png "Day")
+![](screenshots/screenshot2.png "Night")
+
 ## Setting up PSn00bSDK
 Please follow the author steps: https://github.com/Lameguy64/PSn00bSDK/
