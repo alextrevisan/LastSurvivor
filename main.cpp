@@ -264,7 +264,7 @@ int main() {
         FntFlush(-1);		
         
         joystick.Update();
-        graphics->Display<true>();
+        graphics->Display<false>();
         
     }
     
@@ -277,7 +277,6 @@ hills hill{.texture = &hills_texture};
 
 skyUVOffset skyDayOffset;
 int skyTickTimer = 3163;
-int r = 191,g = 182,b = 127;
 
 MATRIX DrawSkyBox(const MATRIX& mtx)
 {

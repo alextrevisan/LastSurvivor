@@ -121,7 +121,32 @@ public:
                 const SVECTOR side2 = {vertices[2].vx - vertices[0].vx, vertices[2].vy - vertices[0].vy, vertices[2].vz - vertices[0].vz};
                 const SVECTOR normal = MathUtils::cross(side1, side2);
 
-                Graphics->Draw<POLY_FT4>(vertices, normal, &grass_tile01_texture);
+                Graphics->Draw<POLY_FT4, false>(vertices, normal, &grass_tile01_texture);
+
+
+                 /*const SVECTOR triangle1[3] = {
+                    {256 + x512 - displacementX, x1z1, 256 + z512 - displacementZ},   //1
+                    {-256 + x512 - displacementX, x0z0, -256 + z512 - displacementZ}, //3
+                    {-256 + x512 - displacementX, x0z1, 256 + z512 - displacementZ},  //2
+
+                };
+
+                const SVECTOR triangle2[3] = {
+                    {-256 + x512 - displacementX, x0z0, -256 + z512 - displacementZ}, //3
+                    {256 + x512 - displacementX, x1z1, 256 + z512 - displacementZ},   //1
+                    {256 + x512 - displacementX, x1z0, -256 + z512 - displacementZ},  //0
+                };
+
+                const SVECTOR side1 = {triangle1[1].vx - triangle1[0].vx, triangle1[1].vy - triangle1[0].vy, triangle1[1].vz - triangle1[0].vz};
+                const SVECTOR side2 = {triangle1[2].vx - triangle1[1].vx, triangle1[2].vy - triangle1[1].vy, triangle1[2].vz - triangle1[1].vz};
+                const SVECTOR normal = MathUtils::cross(side1, side2);
+
+                const SVECTOR side12 = {triangle2[1].vx - triangle2[0].vx, triangle2[1].vy - triangle2[0].vy, triangle2[1].vz - triangle2[0].vz};
+                const SVECTOR side22 = {triangle2[2].vx - triangle2[1].vx, triangle2[2].vy - triangle2[1].vy, triangle2[2].vz - triangle2[1].vz};
+                const SVECTOR normal2 = MathUtils::cross(side12, side22);
+
+                Graphics->Draw<POLY_FT3>(triangle1, normal, &grass_tile01_texture);
+                Graphics->Draw<POLY_FT3>(triangle2, normal, &grass_tile01_texture);*/
 
                 RenderDecorations(x, z, displacementX, displacementZ, x1z0);
             }

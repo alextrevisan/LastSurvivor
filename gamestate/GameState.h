@@ -15,5 +15,5 @@ struct GameState
             CurrentGameState = gameState;
     }
 private:
-    GameStates CurrentGameState = GameStates::MainMenu;
+    GameStates CurrentGameState = GameStates::Level01;
 };
