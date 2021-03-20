@@ -29,100 +29,37 @@
  
 #include "clip.h"
 
-#define CLIP_LEFT	1
-#define CLIP_RIGHT	2
-#define CLIP_TOP	4
-#define CLIP_BOTTOM	8
+constexpr char CLIP_LEFT = 1;
+constexpr char CLIP_RIGHT = 2;
+constexpr char CLIP_TOP	= 3;
+constexpr char CLIP_BOTTOM	= 4;
 //1858
-int test_clip(const RECT *clip, short x, short y) {
+inline const unsigned char test_clip(const RECT* clip, const DVECTOR* rect)
+{
 	
-	// Tests which corners of the screen a point lies outside of
-	
-	//return ((x < clip->x) * CLIP_LEFT) + (x >= (clip->x+(clip->w-1)) * CLIP_RIGHT) + ((y < clip->y) * CLIP_TOP) + (y >= (clip->y+(clip->h-1)) * CLIP_BOTTOM);
-	int result = 0;
-	if ( x < clip->x ) {
-		result |= CLIP_LEFT;
-	}
-	
-	if ( x >= (clip->x+(clip->w-1)) ) {
-		result |= CLIP_RIGHT;
-	}
-	
-	if ( y < clip->y ) {
-		result |= CLIP_TOP;
-	}
-	
-	if ( y >= (clip->y+(clip->h-1)) ) {
-		result |= CLIP_BOTTOM;
-	}
+	unsigned char ret = int(rect->vx < clip->x) << CLIP_LEFT;
+	ret |=  int(rect->vx > (clip->x+(clip->w)))<<CLIP_RIGHT;
+	ret |=  int(rect->vy < clip->y)<<CLIP_TOP;
+	ret |=  int(rect->vy > (clip->y+(clip->h)))<<CLIP_BOTTOM;
 
-	return result;
-	
+	return ret;
 }
 
 //1858
-int tri_clip(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2) {
+int tri_clip(const RECT* clip, const DVECTOR* v0, const DVECTOR* v1, const DVECTOR* v2) {
 	
 	// Returns non-zero if a triangle is outside the screen boundaries
 	
-	short c[3];
-
-	c[0] = test_clip(clip, v0->vx, v0->vy);
-	c[1] = test_clip(clip, v1->vx, v1->vy);
-	c[2] = test_clip(clip, v2->vx, v2->vy);
-
-	if ( ( c[0] & c[1] ) == 0 )
-		return 0;
-	if ( ( c[1] & c[2] ) == 0 )
-		return 0;
-	if ( ( c[2] & c[0] ) == 0 )
+	const auto c0 = test_clip(clip, v0);
+	const auto c1 = test_clip(clip, v1);
+	if ( ( c0 & c1 ) == 0 )
 		return 0;
 
-	return 1;
-}
-
-int tri_clip2(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2) {
+	const auto c2 = test_clip(clip, v2);
+	if ( ( c0 & c2 ) == 0 )
+		return 0;
 	
-	// Returns non-zero if a triangle is outside the screen boundaries
-	
-	short c[3];
-
-	c[0] = test_clip(clip, v0->vx, v0->vy);
-	c[1] = test_clip(clip, v1->vx, v1->vy);
-	c[2] = test_clip(clip, v2->vx, v2->vy);
-
-	if ( ( c[0] & c[1] ) == 0 )
-		return 0;
-	if ( ( c[1] & c[2] ) == 0 )
-		return 0;
-	if ( ( c[2] & c[0] ) == 0 )
-		return 0;
-
-	return 1;
-}
-
-int quad_clip(RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2, DVECTOR *v3) {
-	
-	// Returns non-zero if a quad is outside the screen boundaries
-	
-	short c[4];
-
-	c[0] = test_clip(clip, v0->vx, v0->vy);
-	c[1] = test_clip(clip, v1->vx, v1->vy);
-	c[2] = test_clip(clip, v2->vx, v2->vy);
-	c[3] = test_clip(clip, v3->vx, v3->vy);
-
-	if ( ( c[0] & c[1] ) == 0 )
-		return 0;
-	if ( ( c[1] & c[2] ) == 0 )
-		return 0;
-	if ( ( c[2] & c[3] ) == 0 )
-		return 0;
-	if ( ( c[3] & c[0] ) == 0 )
-		return 0;
-	if ( ( c[0] & c[2] ) == 0 )
-		return 0;
-	if ( ( c[1] & c[3] ) == 0 )
+	if ( ( c1 & c2 ) == 0 )
 		return 0;
 
 	return 1;

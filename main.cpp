@@ -87,7 +87,6 @@ MATRIX DrawSun(const MATRIX& mtx);
 
 int main() {
     graphics = new GraphClass(2048,65536);
-    int i,p,xy_temp;
     
     SVECTOR	rot = { 0 };			/* Rotation vector for Rotmatrix */
     VECTOR	pos = { 0, 0, 0 };	/* Translation vector for TransMatrix */
@@ -130,7 +129,7 @@ int main() {
     auto *map = new Map(graphics, mapPosX, mapPosZ);
 
 
-    MATRIX objectMTX{0},lightMTX{0};
+    MATRIX objectMTX{0};
 
     MainMenu mainMenu;
     GameState gameState;
@@ -195,7 +194,6 @@ int main() {
                     gameState.SetGameState((gameState.GetCurrentGameState() == GameStates::MainMenu ? GameStates::Level01 : GameStates::MainMenu));
                 }
 
-                static int count = 0;
                 const int FPS = graphics->FPS();
                 if(gameState.GetCurrentGameState() == GameStates::Level01 && FPS > 0)
                 {
@@ -203,7 +201,7 @@ int main() {
                     hud.RenderHUD(graphics, camera.Rotation().vy);
                     
                     auto diff = 240;
-                    if(FPS >= 30);
+                    if(FPS >= 30)
                         diff = diff/FPS;
 
                     const int sin = isin(camera.Rotation().vy);
@@ -264,7 +262,7 @@ int main() {
         FntFlush(-1);		
         
         joystick.Update();
-        graphics->Display<true>();
+        graphics->Display<false>();
         
     }
     
@@ -277,7 +275,6 @@ hills hill{.texture = &hills_texture};
 
 skyUVOffset skyDayOffset;
 int skyTickTimer = 3163;
-int r = 191,g = 182,b = 127;
 
 MATRIX DrawSkyBox(const MATRIX& mtx)
 {

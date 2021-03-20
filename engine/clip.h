@@ -12,7 +12,7 @@
  * v0,v1,v2		- Triangle coordinates
  *
  */
-int tri_clip(const RECT *clip, DVECTOR *v0, DVECTOR *v1, DVECTOR *v2);
+int tri_clip(const RECT* clip, const DVECTOR* v0, const DVECTOR* v1, const DVECTOR* v2);
 
 /* quad_clip
  *

@@ -30,13 +30,13 @@ private:
     static constexpr int CENTER_X = MAP_SIZE >> 1;
     static constexpr int CENTER_Z = MAP_SIZE >> 1;
 
+    GraphClass *Graphics;
+
     int LastPosX{0};
     int LastPosZ{0};
 
-    int map[MAP_SIZE][MAP_SIZE];
-    unsigned char decorations[MAP_SIZE][MAP_SIZE];
-
-    GraphClass *Graphics;
+    int map[MAP_SIZE][MAP_SIZE]{0};
+    unsigned char decorations[MAP_SIZE][MAP_SIZE]{0};
 
 public:
     Map(GraphClass *graphics, int mapPosX, int mapPosZ)
@@ -48,23 +48,21 @@ public:
         GenerateFullMap(mapPosZ, mapPosZ);
     }
 
-    inline void RenderDecorations(int x, int z, int displacementX, int displacementZ, int height) const
+    inline void RenderDecorations(const int noise, const SVECTOR& position) const
     {
         constexpr dead_tree deadtree01{.texture = &deadtree_texture};
         constexpr grass grass01{.texture = &grass01_texture};
-        const auto x512 = x << 9;
-        const auto z512 = z << 9;
-        constexpr unsigned char TREE_CHANCE = 78;
-        constexpr unsigned char GRASS_CHANCE = 78;
 
-        const auto noise = decorations[x][z]; //NoiseGenerator::Generate(x + mapIdxX, z + mapIdxZ, 32);
+        constexpr unsigned char TREE_CHANCE = 78;
+        constexpr unsigned char GRASS_CHANCE = 79;
+
         if (noise % TREE_CHANCE == 0)
         {
-            Graphics->DrawObject3D<dead_tree, deadtree01, false>(x512 - displacementX, height + (2048 << 12), z512 - displacementZ);
+            Graphics->DrawObject3D<dead_tree, deadtree01, false>(position);
         }
         else if (noise % GRASS_CHANCE == 0)
         {
-            Graphics->DrawObject3D<grass, grass01, false>(x512 - displacementX, height, z512 - displacementZ);
+            Graphics->DrawObject3D<grass, grass01, false>(position);
         }
     }
     
@@ -102,28 +100,29 @@ public:
             for (int z = 0; z < MAP_SIZE - 1; ++z)
             {
                 const auto x1z1 = map[x + 1][z + 1];
-                const auto x0z0 = map[x][z];
-                const auto x1z0 = map[x + 1][z];
-                const auto x0z1 = map[x][z + 1];
+                const auto x0z0 = map[x    ][z    ];
+                const auto x1z0 = map[x + 1][z    ];
+                const auto x0z1 = map[x    ][z + 1];
 
                 const auto z512 = z << 9;
                 const auto displacementZ = (mapPosZ >> 3) % 512; //mapPosZ%500;
+                const auto vx = x512 - displacementX;
+                const auto vz = z512 - displacementZ;
 
                 const SVECTOR vertices[4] = {
-                    {256 + x512 - displacementX, x1z0, -256 + z512 - displacementZ},  //0
-                    {-256 + x512 - displacementX, x0z0, -256 + z512 - displacementZ}, //3
-                    {256 + x512 - displacementX, x1z1, 256 + z512 - displacementZ},   //1
-                    {-256 + x512 - displacementX, x0z1, 256 + z512 - displacementZ},  //2
-
+                    {256 + vx, x1z0, -256 + vz},  //0
+                    {-256 + vx, x0z0, -256 + vz}, //3
+                    {256 + vx, x1z1, 256 + vz},   //1
+                    {-256 + vx, x0z1, 256 + vz},  //2
                 };
 
                 const SVECTOR side1 = {vertices[1].vx - vertices[0].vx, vertices[1].vy - vertices[0].vy, vertices[1].vz - vertices[0].vz};
                 const SVECTOR side2 = {vertices[2].vx - vertices[0].vx, vertices[2].vy - vertices[0].vy, vertices[2].vz - vertices[0].vz};
                 const SVECTOR normal = MathUtils::cross(side1, side2);
 
-                Graphics->Draw<POLY_FT4>(vertices, normal, &grass_tile01_texture);
+                Graphics->Draw<POLY_FT4, false>(vertices, normal, &grass_tile01_texture);
 
-                RenderDecorations(x, z, displacementX, displacementZ, x1z0);
+                RenderDecorations(decorations[x][z], {vx, x1z0, vz});
             }
         }
         PopMatrix();
@@ -275,20 +274,22 @@ private:
 
     inline void Update(int mapPosX, int mapPosZ)
     {
-        if (mapPosX >> 12 > LastPosX)
+        const auto mapXoffset = mapPosX >> 12;
+        const auto mapZoffset = mapPosZ >> 12;
+        if (mapXoffset > LastPosX)
         {
             OffsetAndGenerateLeft(mapPosX, mapPosZ);
         }
-        else if (mapPosX >> 12 < LastPosX)
+        else if (mapXoffset < LastPosX)
         {
             OffsetAndGenerateRight(mapPosX, mapPosZ);
         }
 
-        if (mapPosZ >> 12 > LastPosZ)
+        if (mapZoffset > LastPosZ)
         {
             OffsetAndGenerateUp(mapPosX, mapPosZ);
         }
-        else if (mapPosZ >> 12 < LastPosZ)
+        else if (mapZoffset < LastPosZ)
         {
             OffsetAndGenerateDown(mapPosX, mapPosZ);
         }

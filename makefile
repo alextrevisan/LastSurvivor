@@ -43,7 +43,7 @@ LIBDIRS		+=
 LIBS		= -lpsxgpu -lpsxgte -lpsxspu -lpsxetc -lpsxapi -lc
 
 # C compiler flags
-CFLAGS		= -O3 -fno-builtin -fdata-sections -ffunction-sections -Wno-narrowing -march=r3000 -mtune=r3000
+CFLAGS		= -O3 -fno-builtin -fdata-sections -ffunction-sections -Wno-narrowing -march=r3000 -mtune=r3000 -Wall
 
 # C++ compiler flags
 CPPFLAGS	= $(CFLAGS) -fno-exceptions \

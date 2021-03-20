@@ -9,6 +9,8 @@
 #include <inline_c.h>
 #include <clip.h>
 
+#include <Operators.h>
+
 #include <fast_draw_functions.h>
 
 namespace
@@ -230,12 +232,15 @@ public:
 						spos.vx+sz, spos.vy+sz*/
 			// Set color
 			setRGB0(polygon, 128, 128, 128);
+			
+			if(object.texture->mode&0x8)
+			{
+				// Set tpage
+				polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
 
-			// Set tpage
-			polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
-
-			// Set CLUT
-			setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+				// Set CLUT
+				setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+			}
 
 			// Set texture coordinates
 			const auto uv = object.uvs;
@@ -249,33 +254,22 @@ public:
 		}
 	}
 
-	template <typename Object, bool BackfaceCulling = true, typename PolygonTypeQ = POLY_FT4>
+	template <typename Object, bool BackfaceCulling = true>
 	inline void DrawObject3D(const Object &object, int x = 0, int y = 0, int z = 0)
 	{
-		//const auto& vertices = object.vertices;
 		constexpr auto sizeq = sizeof(object.quads) / sizeof(typename Object::face4);
+		using PolygonTypeQ = POLY_FT4;
 		if constexpr (sizeq > 0)
 		{
-			//typedef POLY_F4 PolygonTypeQ;
-			for (int i = 0; i < sizeq; ++i)
+			
+			for (unsigned int i = 0; i < sizeq; ++i)
 			{
-				auto vertex0 = object.vertices[object.quads[i].vertice0];
-				auto vertex1 = object.vertices[object.quads[i].vertice3];
-				auto vertex2 = object.vertices[object.quads[i].vertice1];
-				auto vertex3 = object.vertices[object.quads[i].vertice2];
+				const auto vertex0 = object.vertices[object.quads[i].vertice0];
+				const auto vertex1 = object.vertices[object.quads[i].vertice3];
+				const auto vertex2 = object.vertices[object.quads[i].vertice1];
+				const auto vertex3 = object.vertices[object.quads[i].vertice2];
 				const auto normal = object.normals[object.quads[i].normal0];
-				vertex0.vx += x;
-				vertex0.vy += y;
-				vertex0.vz += z;
-				vertex1.vx += x;
-				vertex1.vy += y;
-				vertex1.vz += z;
-				vertex2.vx += x;
-				vertex2.vy += y;
-				vertex2.vz += z;
-				vertex3.vx += x;
-				vertex3.vy += y;
-				vertex3.vz += z;
+
 				gte_ldv3_f(vertex0, vertex1, vertex2);
 				gte_rtpt_b();
 				gte_nclip_b();
@@ -284,7 +278,7 @@ public:
 				gte_stopz_m(p);
 				if constexpr (BackfaceCulling)
 				{
-					if (p < 0)
+					if (p <= 0)
 						continue;
 				}
 				else
@@ -295,48 +289,54 @@ public:
 
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value)
 					gte_avsz4_b();
-				else if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value)
-					gte_avsz3_b();
 				else if constexpr (is_same<PolygonTypeQ, POLY_FT4>::value)
 					gte_avsz4_b();
 
 				gte_stotz_m(p);
-
-				if (((p >> 2) <= 0) || (p >> 2) >= OrderingTableLength)
+				const auto p2 = p >> 2;
+				if ((p2 <= 0) || p2 >= OrderingTableLength)
 					continue;
 
 				PolygonTypeQ *polygon = (PolygonTypeQ *)GetNextPri();
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value)
+				{
 					setPolyF4(polygon);
-				if constexpr (is_same<PolygonTypeQ, POLY_F3>::value)
-					setPolyF3(polygon);
-				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value)
-					setPolyFT3(polygon);
+					gte_stsxy3_f4(polygon);
+				}
 				if constexpr (is_same<PolygonTypeQ, POLY_FT4>::value)
+				{
 					setPolyFT4(polygon);
-
-				gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
-
-				const RECT screen_clip{0, 0, Width, Height};
+					gte_stsxy3_ft4(polygon);
+				}
+				else
+				{
+					gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+				}
 
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
 				{
 					gte_ldv0_f(vertex3);
-					gte_rtps_b();
+					gte_rtps();
 					gte_stsxy(&polygon->x3);
 				}
 
+				setRGB0(polygon, 127,127,127);
+
 				gte_ldrgb(&polygon->r0);
 				gte_ldv0_f(normal);
-				gte_ncs();
+				gte_ncs_b();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
 				{
-					gte_avsz4_b();
-					gte_stotz_m(p);
-					polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
-					setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					if(object.texture->mode&0x8)
+					{
+						// Set tpage
+						polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
+
+						// Set CLUT
+						setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					}
 					//setUV3
 					polygon->u0 = object.uvs[object.quads[i].uv0].vx;
 					polygon->v0 = object.uvs[object.quads[i].uv0].vy;
@@ -362,59 +362,69 @@ public:
 		if constexpr (sizet > 0)
 		{
 			using PolygonTypeT = POLY_FT3;
-			for (int i = 0; i < sizet; ++i)
+			for (unsigned int i = 0; i < sizet; ++i)
 			{
-				const auto &vertex0 = object.vertices[object.tris[i].vertice0];
-				const auto &vertex1 = object.vertices[object.tris[i].vertice2];
-				const auto &vertex2 = object.vertices[object.tris[i].vertice1];
-				const auto &normal = object.normals[object.tris[i].normal0];
+				const auto vertex0 = object.vertices[object.tris[i].vertice0];
+				const auto vertex1 = object.vertices[object.tris[i].vertice2];
+				const auto vertex2 = object.vertices[object.tris[i].vertice1];
+				const auto normal = object.normals[object.tris[i].normal0];
 				//uint32_t tab[sizeof(A)]= {A::value...};
 
 				gte_ldv3_f(vertex0, vertex1, vertex2);
-				gte_rtpt();
-				gte_nclip();
+				gte_rtpt_b();
+				gte_nclip_b();
 				int p;
 				gte_stopz(&p);
-				if (p < 0)
-					continue;
+				if constexpr (BackfaceCulling)
+				{
+					if (p <= 0)
+						continue;
+				}
+				else
+				{
+					if (p == 0)
+						continue;
+				}
 
-				if constexpr (is_same<PolygonTypeT, POLY_F4>::value)
-					gte_avsz4_b();
-				else if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
-					gte_avsz3();
-				else if constexpr (is_same<PolygonTypeT, POLY_FT4>::value)
-					gte_avsz4_b();
-
+				gte_avsz3_b();
 				gte_stotz_m(p);
 
-				if (((p >> 2) <= 0) || (p >> 2) >= OrderingTableLength)
+				const auto p2 = p >> 2;
+				if ((p2 <= 0) || p2 >= OrderingTableLength)
 					continue;
 
 				PolygonTypeT *polygon = (PolygonTypeT *)GetNextPri();
-				if constexpr (is_same<PolygonTypeT, POLY_F4>::value)
-					setPolyF4(polygon);
 				if constexpr (is_same<PolygonTypeT, POLY_F3>::value)
+				{
 					setPolyF3(polygon);
+					gte_stsxy3_f3(polygon);
+				}
 				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
+				{
 					setPolyFT3(polygon);
-				if constexpr (is_same<PolygonTypeT, POLY_FT4>::value)
-					setPolyFT4(polygon);
-
-				gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
-
-				const RECT screen_clip{0, 0, Width, Height};
-
+					gte_stsxy3_ft3(polygon);
+				}
+				else
+				{
+					gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+				}
+				setRGB0(polygon, 127,127,127);
 				gte_ldrgb(&polygon->r0);
 				gte_ldv0_f(normal);
-				gte_ncs();
+				gte_ncs_b();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value || is_same<PolygonTypeT, POLY_FT4>::value)
 				{
-					gte_avsz4_b();
-					gte_stotz_m(p);
-					polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
-					setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					
+					if(object.texture->mode&0x8)
+					{
+						// Set tpage
+						polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
+
+						// Set CLUT
+						setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					}
 					//setUV3
 					polygon->u0 = object.uvs[object.tris[i].uv0].vx;
 					polygon->v0 = object.uvs[object.tris[i].uv0].vy;
@@ -426,40 +436,30 @@ public:
 					polygon->v2 = object.uvs[object.tris[i].uv1].vy;
 				}
 
-				addPrim(GetOt() + (p >> 2), polygon);
+				addPrim(GetOt() + p2, polygon);
 				IncPri(sizeof(PolygonTypeT));
 			}
 		}
+		//PopMatrix();
 	}
-
+	
 	template <typename Object, Object object, bool BackfaceCulling = true, typename PolygonTypeQ = POLY_FT4>
-	inline void DrawObject3D(int x = 0, int y = 0, int z = 0)
+	inline void DrawObject3D(const SVECTOR& position)
 	{
-		//const auto& vertices = object.vertices;
 		constexpr auto sizeq = sizeof(object.quads) / sizeof(typename Object::face4);
 		if constexpr (sizeq > 0)
 		{
 			//typedef POLY_F4 PolygonTypeQ;
-			for (int i = 0; i < sizeq; ++i)
+			for (unsigned int i = 0; i < sizeq; ++i)
 			{
-				auto vertex0 = object.vertices[object.quads[i].vertice0];
-				auto vertex1 = object.vertices[object.quads[i].vertice3];
-				auto vertex2 = object.vertices[object.quads[i].vertice1];
-				auto vertex3 = object.vertices[object.quads[i].vertice2];
+				const auto vertex0 = object.vertices[object.quads[i].vertice0] + position;//add(object.vertices[object.quads[i].vertice0], x,y,z);
+				const auto vertex1 = object.vertices[object.quads[i].vertice3] + position;
+				const auto vertex2 = object.vertices[object.quads[i].vertice1] + position;
+				const auto vertex3 = object.vertices[object.quads[i].vertice2] + position;
 				const auto normal = object.normals[object.quads[i].normal0];
-				vertex0.vx += x;
-				vertex0.vy += y;
-				vertex0.vz += z;
-				vertex1.vx += x;
-				vertex1.vy += y;
-				vertex1.vz += z;
-				vertex2.vx += x;
-				vertex2.vy += y;
-				vertex2.vz += z;
-				vertex3.vx += x;
-				vertex3.vy += y;
-				vertex3.vz += z;
+
 				gte_ldv3_f(vertex0, vertex1, vertex2);
+
 				gte_rtpt_b();
 				gte_nclip_b();
 
@@ -467,7 +467,7 @@ public:
 				gte_stopz_m(p);
 				if constexpr (BackfaceCulling)
 				{
-					if (p < 0)
+					if (p <= 0)
 						continue;
 				}
 				else
@@ -478,48 +478,59 @@ public:
 
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value)
 					gte_avsz4_b();
-				else if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value)
-					gte_avsz3_b();
 				else if constexpr (is_same<PolygonTypeQ, POLY_FT4>::value)
 					gte_avsz4_b();
 
 				gte_stotz_m(p);
-
-				if (((p >> 2) <= 0) || (p >> 2) >= OrderingTableLength)
+				const auto p2 = p >> 2;
+				if ((p2 <= 0) || p2 >= OrderingTableLength)
 					continue;
 
 				PolygonTypeQ *polygon = (PolygonTypeQ *)GetNextPri();
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value)
+				{
 					setPolyF4(polygon);
-				if constexpr (is_same<PolygonTypeQ, POLY_F3>::value)
-					setPolyF3(polygon);
-				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value)
-					setPolyFT3(polygon);
-				if constexpr (is_same<PolygonTypeQ, POLY_FT4>::value)
+					gte_stsxy3_f4(polygon);
+				}
+				else if constexpr (is_same<PolygonTypeQ, POLY_FT4>::value)
+				{
 					setPolyFT4(polygon);
+					gte_stsxy3_ft4(polygon);
+				}
+				else
+				{
+					gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+				}
 
-				gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
-
-				const RECT screen_clip{0, 0, Width, Height};
+                const RECT screen_clip{0, 0, Width, Height};
+                if (tri_clip(&screen_clip,
+                            (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
+                            (DVECTOR *)&polygon->x2))
+                    continue;
 
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
 				{
 					gte_ldv0_f(vertex3);
-					gte_rtps_b();
+					gte_rtps();
 					gte_stsxy(&polygon->x3);
 				}
 
+				setRGB0(polygon, 127,127,127);
 				gte_ldrgb(&polygon->r0);
 				gte_ldv0_f(normal);
-				gte_ncs();
+				gte_ncs_b();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
 				{
-					gte_avsz4_b();
-					gte_stotz_m(p);
-					polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
-					setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					if(object.texture->mode&0x8)
+					{
+						// Set tpage
+						polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
+
+						// Set CLUT
+						setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					}
 					//setUV3
 					polygon->u0 = object.uvs[object.quads[i].uv0].vx;
 					polygon->v0 = object.uvs[object.quads[i].uv0].vy;
@@ -536,7 +547,7 @@ public:
 					}
 				}
 
-				addPrim(GetOt() + (p >> 2), polygon);
+				addPrim(GetOt() + p2, polygon);
 				IncPri(sizeof(PolygonTypeQ));
 			}
 		}
@@ -547,57 +558,76 @@ public:
 			using PolygonTypeT = POLY_FT3;
 			for (int i = 0; i < sizet; ++i)
 			{
-				const auto *vertex0 = &object.vertices[object.tris[i].vertice0];
-				const auto *vertex1 = &object.vertices[object.tris[i].vertice2];
-				const auto *vertex2 = &object.vertices[object.tris[i].vertice1];
-				const auto *normal = &object.normals[object.tris[i].normal0];
+				const auto vertex0 = object.vertices[object.tris[i].vertice0];
+				const auto vertex1 = object.vertices[object.tris[i].vertice2];
+				const auto vertex2 = object.vertices[object.tris[i].vertice1];
+				const auto normal = object.normals[object.tris[i].normal0];
 				//uint32_t tab[sizeof(A)]= {A::value...};
 
 				gte_ldv3_f(vertex0, vertex1, vertex2);
-				gte_rtpt();
-				gte_nclip();
+				gte_rtpt_b();
+				gte_nclip_b();
 				int p;
 				gte_stopz(&p);
-				if (p < 0)
-					continue;
 
-				if constexpr (is_same<PolygonTypeT, POLY_F4>::value)
-					gte_avsz4_b();
-				else if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
-					gte_avsz3();
-				else if constexpr (is_same<PolygonTypeT, POLY_FT4>::value)
-					gte_avsz4_b();
+				if constexpr (BackfaceCulling)
+				{
+					if (p <= 0)
+						continue;
+				}
+				else
+				{
+					if (p == 0)
+						continue;
+				}
+
+				gte_avsz3_b();
 
 				gte_stotz_m(p);
 
-				if (((p >> 2) <= 0) || (p >> 2) >= OrderingTableLength)
+				const auto p2 = p>>2;
+				if (p2 <= 0 || p2 >= OrderingTableLength)
 					continue;
 
 				PolygonTypeT *polygon = (PolygonTypeT *)GetNextPri();
-				if constexpr (is_same<PolygonTypeT, POLY_F4>::value)
-					setPolyF4(polygon);
 				if constexpr (is_same<PolygonTypeT, POLY_F3>::value)
+				{
 					setPolyF3(polygon);
+					gte_stsxy3_f3(polygon);
+				}
 				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
+				{
 					setPolyFT3(polygon);
-				if constexpr (is_same<PolygonTypeT, POLY_FT4>::value)
-					setPolyFT4(polygon);
+					gte_stsxy3_ft3(polygon);
+				}
+				else
+				{
+					gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+				}
 
-				gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+                // Test if tri is off-screen, discard if so
+                const RECT screen_clip{0, 0, Width, Height};
+                if (tri_clip(&screen_clip,
+                            (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
+                            (DVECTOR *)&polygon->x2))
+                    continue;
 
-				const RECT screen_clip{0, 0, Width, Height};
-
+				setRGB0(polygon, 0,0,0);
 				gte_ldrgb(&polygon->r0);
 				gte_ldv0_f(normal);
-				gte_ncs();
+				gte_ncs_b();
 				gte_strgb(&polygon->r0);
 
-				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value || is_same<PolygonTypeT, POLY_FT4>::value)
+				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
 				{
-					gte_avsz4_b();
-					gte_stotz_m(p);
-					polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
-					setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					if(object.texture->mode&0x8)
+					{
+						// Set tpage
+						polygon->tpage = getTPage(object.texture->mode, 0, object.texture->prect->x, object.texture->prect->y);
+
+						// Set CLUT
+						setClut(polygon, object.texture->crect->x, object.texture->crect->y);
+					}
 					//setUV3
 					polygon->u0 = object.uvs[object.tris[i].uv0].vx;
 					polygon->v0 = object.uvs[object.tris[i].uv0].vy;
@@ -615,31 +645,44 @@ public:
 		}
 	}
 
-	template <typename PolygonType>
-	inline void Draw(const SVECTOR (&values)[], const SVECTOR &normal, const TIM_IMAGE *texture = nullptr, const CVECTOR rgb = {255,0,0})
+	template <typename PolygonType, bool BackfaceCulling = true>
+	inline void Draw(const SVECTOR (&values)[], const SVECTOR &normal, const TIM_IMAGE *texture = nullptr, const CVECTOR rgb = {127,127,127})
 	{
 		/* Load the first 3 vertices of a quad to the GTE */
 		gte_ldv3_f(values[0], values[1], values[2]);
 
 		/* Rotation, Translation and Perspective Triple */
-		gte_rtpt();
+		gte_rtpt_b();
+
+		int p;
+		gte_stflg_m(p);
+		
+		if (p & 0x80000000)
+			return;
 
 		/* Compute normal clip for backface culling */
-		gte_nclip();
+		gte_nclip_b();
 
 		/* Get result*/
-		int p;
 		gte_stopz_m(p);
 
 		/* Skip this face if backfaced */
-		if (p <= 0)
-			return;
+		if constexpr (BackfaceCulling)
+		{
+			if ( p <= 0 )
+				return;
+		}
+		else
+		{
+			if (p == 0)
+				return;
+		}		
 
 		/* Calculate average Z for depth sorting */
 		if constexpr (is_same<PolygonType, POLY_F4>::value)
 			gte_avsz4_b();
 		else if constexpr (is_same<PolygonType, POLY_FT3>::value)
-			gte_avsz3();
+			gte_avsz3_b();
 		else if constexpr (is_same<PolygonType, POLY_FT4>::value)
 			gte_avsz4_b();
 
@@ -647,31 +690,48 @@ public:
 
 		/* Skip if clipping off */
 		/* (the shift right operator is to scale the depth precision) */
-		if (((p >> 2) <= 0) || (p >> 2) >= OrderingTableLength)
+		const auto p2 = p>>2;
+		if (p2 <= 0 || p2 >= OrderingTableLength)
 			return;
 
 		PolygonType *polygon = (PolygonType *)GetNextPri();
 		/* Initialize the primitive */
 		if constexpr (is_same<PolygonType, POLY_F4>::value)
+		{
 			setPolyF4(polygon);
-		if constexpr (is_same<PolygonType, POLY_F3>::value)
+			/* Set the projected vertices to the primitive */
+			gte_stsxy3_f4(polygon);
+		}
+		else if constexpr (is_same<PolygonType, POLY_F3>::value)
+		{
 			setPolyF3(polygon);
-		if constexpr (is_same<PolygonType, POLY_FT3>::value)
+			/* Set the projected vertices to the primitive */
+			gte_stsxy3_f3(polygon);
+		}
+		else if constexpr (is_same<PolygonType, POLY_FT3>::value)
+		{
 			setPolyFT3(polygon);
-		if constexpr (is_same<PolygonType, POLY_FT4>::value)
+			/* Set the projected vertices to the primitive */
+			gte_stsxy3_ft3(polygon);
+		}
+		else if constexpr (is_same<PolygonType, POLY_FT4>::value)
+		{
 			setPolyFT4(polygon);
-
-		/* Set the projected vertices to the primitive */
-		gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
-
+			/* Set the projected vertices to the primitive */
+			gte_stsxy3_ft4(polygon);
+		}
+		else 
+		{
+			gte_stsxy3(&polygon->x0, &polygon->x1, &polygon->x2);
+		}
+			
 		// Test if tri is off-screen, discard if so
-		/*const RECT screen_clip{0, 0, Width, Height};
+		constexpr RECT screen_clip{0, 0, 320, 240};
 		if (tri_clip(&screen_clip,
 					 (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
 					 (DVECTOR *)&polygon->x2))
-			return;*/
-
-		if constexpr (is_same<PolygonType, POLY_F4>::value || is_same<PolygonType, POLY_FT4>::value)
+			return;
+		if constexpr (is_same<PolygonType, POLY_F4>::value || is_same<PolygonType, POLY_FT4>::value || is_same<PolygonType, POLY_GT4>::value)
 		{
 			/* Compute the last vertex and set the result */
 			gte_ldv0_f(values[3]);
@@ -679,7 +739,7 @@ public:
 			gte_stsxy(&polygon->x3);
 		}
 
-		/* Load primitive color even though gte_ncs() doesn't use it. */
+		/* Load primitive color even though gte_ncs_b() doesn't use it. */
 		/* This is so the GTE will output a color result with the */
 		/* correct primitive code. */
 		setRGB0(polygon, rgb.r,rgb.g,rgb.b);
@@ -689,22 +749,19 @@ public:
 		gte_ldv0_f(normal);
 		
 		/* Normal Color Single */
-		gte_ncs();
-		//gte_nccs(); ???
+		gte_ncs_b();
 
-		/* Store result to the primitive */
 		gte_strgb(&polygon->r0);
 
 		if constexpr (is_same<PolygonType, POLY_FT3>::value || is_same<PolygonType, POLY_FT4>::value)
 		{
-			gte_avsz4_b();
-			gte_stotz_m(p);
-
 			// Set tpage
-			polygon->tpage = getTPage(texture->mode, 0, texture->prect->x, texture->prect->y);
-
-			// Set CLUT
-			setClut(polygon, texture->crect->x, texture->crect->y);
+			if(texture->mode&0x8)
+			{
+				polygon->tpage = getTPage(texture->mode, 0, texture->prect->x, texture->prect->y);
+				// Set CLUT
+				setClut(polygon, texture->crect->x, texture->crect->y);
+			}
 
 			// Set texture coordinates
 			constexpr auto U_out = 0;
@@ -718,7 +775,7 @@ public:
 		}
 
 		/* Sort primitive to the ordering table */
-		addPrim(GetOt() + (p >> 2), polygon);
+		addPrim(GetOt() + p2, polygon);
 		//setaddr( p, getaddr( ot ) ), setaddr( ot, p )
 
 		/* Advance to make another primitive */
