@@ -9,9 +9,9 @@ public:
     static SVECTOR cross(const SVECTOR& left, const SVECTOR& right)
     {
         SVECTOR output;
-        VECTOR input{((left.vy*right.vz)-(left.vz*right.vy)>>12),
-                ((left.vz*right.vx)-(left.vx*right.vz)>>12),
-                ((left.vx*right.vy)-(left.vy*right.vx)>>12)
+        VECTOR input{(((left.vy*right.vz)-(left.vz*right.vy))>>12),
+                (((left.vz*right.vx)-(left.vx*right.vz))>>12),
+                (((left.vx*right.vy)-(left.vy*right.vx))>>12)
         };
 
         VectorNormalS(&input, &output);
@@ -43,7 +43,7 @@ public:
 
     static const inline short DotProduct(const SVECTOR& left, const SVECTOR& right)
 	{
-		return (left.vx * right.vx)>>12 + (left.vy * right.vy)>>12 + (left.vz * right.vz)>>12;
+		return ((left.vx * right.vx)>>12) + ((left.vy * right.vy)>>12) + ((left.vz * right.vz)>>12);
 	}
 };
 
