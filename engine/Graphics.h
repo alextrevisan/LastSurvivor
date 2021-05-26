@@ -8,10 +8,79 @@
 #include <psxgpu.h>
 #include <inline_c.h>
 #include <clip.h>
+#include <gtemac.h>
 
+#include <Math.h>
 #include <Operators.h>
-
 #include <fast_draw_functions.h>
+#define gte_SetFarColor( r0, r1, r2 ) __asm__  (	\
+	"sll	$12, %0, 4;"					\
+	"sll	$13, %1, 4;"					\
+	"sll	$14, %2, 4;"					\
+	"ctc2	$12, $21;"					\
+	"ctc2	$13, $22;"					\
+	"ctc2	$14, $23"					\
+	:							\
+	: "r"( r0 ), "r"( r1 ), "r"( r2 )			\
+	: "$12", "$13", "$14" )
+
+#define gte_SetDQA( r0 ) __asm__ volatile (		\
+	"addu	$12,$0,%0;"						\
+	"ctc2	$12, $27"					\
+	:							\
+	: "r"( r0 ) 			\
+	: "a0" )
+
+//-----------------------------------------------------------------------------
+
+#define gte_SetDQB( r0 ) __asm__ volatile (		\
+	"addu	$12,$0,%0;"				\
+	"ctc2	$12, $28"					\
+	:							\
+	: "r"( r0 )             \
+	: "$12"  )
+
+void SetFogNear(long a, long h)
+{
+	//Error division by 0
+	if(h == 0)
+		return;
+	int depthQ = -(((a << 2) + a) << 6);
+	if(h != -1 && depthQ != 0x8000)
+		return;
+	gte_SetDQA(depthQ / h);
+	gte_SetDQB(20971520);
+}
+
+void SetFogNearFar(long fogNear, long fogFar, long h)
+{
+	short delta = fogFar-fogNear;
+	if(delta >= 0x64)
+	{
+		int DQA,DQB;
+		DQA = (
+			  	(
+					(
+						(0-fogNear)*fogFar
+					) / delta
+				) << 0x8
+			  ) / h;
+
+		if(DQA < -0x8000)
+			DQA = -0x8000;
+
+		if(DQA > 0x7fff)
+			DQA = 0x7fff;
+
+		DQB = ((fogFar << 0xc) / delta) << 0xc;
+
+//		cout << hex << "DQA = " << DQA << ", DQB = " << DQB << std::endl;
+
+		gte_SetDQA(DQA);
+		gte_SetDQB(DQB);
+	}
+}
+
 
 namespace
 {
@@ -113,6 +182,8 @@ public:
 		// Set light ambient color and light color matrix
 		//original day 191,182,127
 		gte_SetBackColor(127, 102, 19);
+		gte_SetFarColor(0, 0, 0);
+		SetFogNearFar(250, 600, Width);
 
 		VSyncCallback(vsync_cb);
 
@@ -452,10 +523,10 @@ public:
 			//typedef POLY_F4 PolygonTypeQ;
 			for (unsigned int i = 0; i < sizeq; ++i)
 			{
-				const auto vertex0 = object.vertices[object.quads[i].vertice0] + position;//add(object.vertices[object.quads[i].vertice0], x,y,z);
-				const auto vertex1 = object.vertices[object.quads[i].vertice3] + position;
-				const auto vertex2 = object.vertices[object.quads[i].vertice1] + position;
-				const auto vertex3 = object.vertices[object.quads[i].vertice2] + position;
+				const auto vertex0 = position + object.vertices[object.quads[i].vertice0];
+				const auto vertex1 = position + object.vertices[object.quads[i].vertice3];
+				const auto vertex2 = position + object.vertices[object.quads[i].vertice1];
+				const auto vertex3 = position + object.vertices[object.quads[i].vertice2];
 				const auto normal = object.normals[object.quads[i].normal0];
 
 				gte_ldv3_f(vertex0, vertex1, vertex2);
@@ -646,7 +717,7 @@ public:
 	}
 
 	template <typename PolygonType, bool BackfaceCulling = true>
-	inline void Draw(const SVECTOR (&values)[], const SVECTOR &normal, const TIM_IMAGE *texture = nullptr, const CVECTOR rgb = {127,127,127})
+	inline void Draw(const SVector3D (&values)[], const SVector3D &normal, const TIM_IMAGE *texture = nullptr, const CVECTOR rgb = {127,127,127})
 	{
 		/* Load the first 3 vertices of a quad to the GTE */
 		gte_ldv3_f(values[0], values[1], values[2]);
@@ -742,7 +813,9 @@ public:
 		/* Load primitive color even though gte_ncs_b() doesn't use it. */
 		/* This is so the GTE will output a color result with the */
 		/* correct primitive code. */
-		setRGB0(polygon, rgb.r,rgb.g,rgb.b);
+		CVECTOR out;
+		gte_DpqColor(&rgb, p, &out);
+		setRGB0(polygon, out.r,out.g,out.b);
 		gte_ldrgb(&polygon->r0);
 
 		/* Load the face normal */

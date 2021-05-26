@@ -3,13 +3,15 @@
 
 #include <psxgpu.h>
 
+#include <Math.h>
+#include <MathUtils.h>
+
 #include <Graphics.h>
 #include <TextureManager.h>
 #include <AmbientLightController.h>
 
 #include <PerlinNoise.h>
 #include <NoiseGenerator.h>
-#include <MathUtils.h>
 
 #include <meshs/dead_tree.h>
 #include <meshs/grass.h>
@@ -95,30 +97,34 @@ public:
         for (int x = 0; x < MAP_SIZE - 1; ++x)
         {
             const auto x512 = x << 9;
-            const auto displacementX = (mapPosX >> 3) % 512;
+            const short displacementX = (mapPosX >> 3) % 512;
 
             for (int z = 0; z < MAP_SIZE - 1; ++z)
             {
-                const auto x1z1 = map[x + 1][z + 1];
-                const auto x0z0 = map[x    ][z    ];
-                const auto x1z0 = map[x + 1][z    ];
-                const auto x0z1 = map[x    ][z + 1];
+                const short x1z1 = map[x + 1][z + 1];
+                const short x0z0 = map[x    ][z    ];
+                const short x1z0 = map[x + 1][z    ];
+                const short x0z1 = map[x    ][z + 1];
 
-                const auto z512 = z << 9;
-                const auto displacementZ = (mapPosZ >> 3) % 512; //mapPosZ%500;
-                const auto vx = x512 - displacementX;
-                const auto vz = z512 - displacementZ;
+                const short z512 = z << 9;
+                const short displacementZ = (mapPosZ >> 3) % 512; //mapPosZ%500;
+                const short vx = x512 - displacementX;
+                const short vz = z512 - displacementZ;
 
-                const SVECTOR vertices[4] = {
-                    {256 + vx, x1z0, -256 + vz},  //0
-                    {-256 + vx, x0z0, -256 + vz}, //3
-                    {256 + vx, x1z1, 256 + vz},   //1
-                    {-256 + vx, x0z1, 256 + vz},  //2
+                const SVector3D vertices[4] = {
+                    SVector3D(256 + vx, x1z0, -256 + vz),  //0
+                    SVector3D(-256 + vx, x0z0, -256 + vz), //3
+                    SVector3D(256 + vx, x1z1, 256 + vz),   //1
+                    SVector3D(-256 + vx, x0z1, 256 + vz),  //2
                 };
 
-                const SVECTOR side1 = {vertices[1].vx - vertices[0].vx, vertices[1].vy - vertices[0].vy, vertices[1].vz - vertices[0].vz};
-                const SVECTOR side2 = {vertices[2].vx - vertices[0].vx, vertices[2].vy - vertices[0].vy, vertices[2].vz - vertices[0].vz};
-                const SVECTOR normal = MathUtils::cross(side1, side2);
+                const Vector3D side1 = {vertices[1].vx - vertices[0].vx, vertices[1].vy - vertices[0].vy, vertices[1].vz - vertices[0].vz};
+                const Vector3D side2 = {vertices[2].vx - vertices[0].vx, vertices[2].vy - vertices[0].vy, vertices[2].vz - vertices[0].vz};
+                /*const SVector3D normal = MathUtils::cross(
+                    {side1.vx, side1.vy, side1.vz},
+                    {side2.vx, side2.vy, side2.vz});*/
+                
+                const SVector3D normal = Vector3D::crossProduct(side1, side2).normalise();
 
                 Graphics->Draw<POLY_FT4, false>(vertices, normal, &grass_tile01_texture);
 
