@@ -22,7 +22,6 @@
 
 #include <NoiseGenerator.h>
 #include <PerlinNoise.h>
-#include <MathUtils.h>
 
 #include <gamestate/GameState.h>
 
