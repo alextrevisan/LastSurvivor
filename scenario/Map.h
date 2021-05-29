@@ -124,7 +124,7 @@ public:
                     {side1.vx, side1.vy, side1.vz},
                     {side2.vx, side2.vy, side2.vz});*/
                 
-                const SVector3D normal = Vector3D::crossProduct(side1, side2).normalise();
+                const SVector3D normal = Vector3D::crossProduct(side1, side2).normalize();
 
                 Graphics->Draw<POLY_FT4, false>(vertices, normal, &grass_tile01_texture);
 
