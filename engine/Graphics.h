@@ -81,6 +81,46 @@ void SetFogNearFar(long fogNear, long fogFar, long h)
 	}
 }
 
+void WF_SetFogNearFar(short fogNear, short fogFar,short h)
+{
+	//assert(fogNear > h);
+	//assert(fogNear > 0);
+	//assert(fogFar > 0);
+	//AssertMsg(fogNear <= fogFar,"fogNear = " << fogNear << ", fogFar = " << fogFar);
+	//assert(h > 0);
+	short delta = fogFar-fogNear;
+	if(delta >= 0x64)
+	{
+		int DQA,DQB;
+
+		//assert(delta);
+		//assert(h);
+		DQA = (
+			  	(
+					(
+						(0-fogNear)*fogFar
+					) / delta
+				) << 0x8
+			  ) / h;
+
+		if(DQA < -0x8000)
+			DQA = -0x8000;
+
+		if(DQA > 0x7fff)
+			DQA = 0x7fff;
+
+		DQB = ((fogFar << 0xc) / delta) << 0xc;
+
+//		cout << hex << "DQA = " << DQA << ", DQB = " << DQB << std::endl;
+
+		gte_SetDQA(DQA);
+		gte_SetDQB(DQB);
+	}
+	// kts added
+	//else
+		//asse
+}
+
 
 namespace
 {
@@ -147,6 +187,12 @@ public:
 	{
 	}
 
+	void setClearColor(const CVECTOR& color)
+	{
+		setRGB0(&DrawEnvironment[0], color.r, color.g, color.b	);
+		setRGB0(&DrawEnvironment[1], color.r, color.g, color.b	);
+	}
+
 	void SetResolution(short width, short heigth)
 	{
 		Width = width;
@@ -156,14 +202,14 @@ public:
 		SetDefDispEnv(&DisplayEnvironment[0], 0, heigth, width, heigth);
 		SetDefDrawEnv(&DrawEnvironment[0], 0, 0, width, heigth);
 
-		setRGB0(&DrawEnvironment[0], 0, 0, 0);
+		setRGB0(&DrawEnvironment[0], 127, 127, 255	);
 		DrawEnvironment[0].isbg = 1;
 		DrawEnvironment[0].dtd = 1;
 
 		SetDefDispEnv(&DisplayEnvironment[1], 0, 0, width, heigth);
 		SetDefDrawEnv(&DrawEnvironment[1], 0, heigth, width, heigth);
 
-		setRGB0(&DrawEnvironment[1], 0, 0, 0);
+		setRGB0(&DrawEnvironment[1], 127, 127, 255);
 		DrawEnvironment[1].isbg = 1;
 		DrawEnvironment[1].dtd = 1;
 
@@ -181,9 +227,11 @@ public:
 
 		// Set light ambient color and light color matrix
 		//original day 191,182,127
-		gte_SetBackColor(127, 102, 19);
-		gte_SetFarColor(0, 0, 0);
-		SetFogNearFar(250, 600, Width);
+		//gte_SetBackColor(127, 102, 19);
+		//gte_SetFarColor(0, 0, 0);
+		//SetFogNearFar(0, 100, heigth);
+
+		WF_SetFogNearFar(1000, 1000, heigth);
 
 		VSyncCallback(vsync_cb);
 
@@ -394,8 +442,9 @@ public:
 				setRGB0(polygon, 127,127,127);
 
 				gte_ldrgb(&polygon->r0);
-				gte_ldv0_f(normal);
-				gte_ncs_b();
+				gte_ldv0(&normal);
+				gte_lddp(p<<1);
+				gte_ncds();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
@@ -481,8 +530,9 @@ public:
 				}
 				setRGB0(polygon, 127,127,127);
 				gte_ldrgb(&polygon->r0);
-				gte_ldv0_f(normal);
-				gte_ncs_b();
+				gte_ldv0(&normal);
+				gte_lddp(p<<1);
+				gte_ncds();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value || is_same<PolygonTypeT, POLY_FT4>::value)
@@ -574,10 +624,10 @@ public:
 				}
 
                 const RECT screen_clip{0, 0, Width, Height};
-                if (tri_clip(&screen_clip,
+                /*if (tri_clip(&screen_clip,
                             (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
                             (DVECTOR *)&polygon->x2))
-                    continue;
+                    continue;*/
 
 				if constexpr (is_same<PolygonTypeQ, POLY_F4>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
 				{
@@ -588,8 +638,9 @@ public:
 
 				setRGB0(polygon, 127,127,127);
 				gte_ldrgb(&polygon->r0);
-				gte_ldv0_f(normal);
-				gte_ncs_b();
+				gte_ldv0(&normal);
+				gte_lddp(p<<1);
+				gte_ncds();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeQ, POLY_FT3>::value || is_same<PolygonTypeQ, POLY_FT4>::value)
@@ -677,16 +728,17 @@ public:
 				}
 
                 // Test if tri is off-screen, discard if so
-                const RECT screen_clip{0, 0, Width, Height};
+               /* const RECT screen_clip{0, 0, Width, Height};
                 if (tri_clip(&screen_clip,
                             (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
                             (DVECTOR *)&polygon->x2))
-                    continue;
+                    continue;*/
 
 				setRGB0(polygon, 0,0,0);
 				gte_ldrgb(&polygon->r0);
-				gte_ldv0_f(normal);
-				gte_ncs_b();
+				gte_ldv0(&normal);
+				gte_lddp(p<<1);
+				gte_ncds();
 				gte_strgb(&polygon->r0);
 
 				if constexpr (is_same<PolygonTypeT, POLY_FT3>::value)
@@ -797,11 +849,11 @@ public:
 		}
 			
 		// Test if tri is off-screen, discard if so
-		constexpr RECT screen_clip{0, 0, 320, 240};
+		/*constexpr RECT screen_clip{0, 0, 320, 240};
 		if (tri_clip(&screen_clip,
 					 (DVECTOR *)&polygon->x0, (DVECTOR *)&polygon->x1,
 					 (DVECTOR *)&polygon->x2))
-			return;
+			return;*/
 		if constexpr (is_same<PolygonType, POLY_F4>::value || is_same<PolygonType, POLY_FT4>::value || is_same<PolygonType, POLY_GT4>::value)
 		{
 			/* Compute the last vertex and set the result */
@@ -813,17 +865,13 @@ public:
 		/* Load primitive color even though gte_ncs_b() doesn't use it. */
 		/* This is so the GTE will output a color result with the */
 		/* correct primitive code. */
-		CVECTOR out;
-		gte_DpqColor(&rgb, p, &out);
-		setRGB0(polygon, out.r,out.g,out.b);
+		///CVECTOR out;
+		//gte_DpqColor(&rgb, p, &out);
+		setRGB0(polygon, 127,127,127);
 		gte_ldrgb(&polygon->r0);
-
-		/* Load the face normal */
-		gte_ldv0_f(normal);
-		
-		/* Normal Color Single */
-		gte_ncs_b();
-
+		gte_ldv0(&normal);
+		gte_lddp(p<<1);
+		gte_ncds();
 		gte_strgb(&polygon->r0);
 
 		if constexpr (is_same<PolygonType, POLY_FT3>::value || is_same<PolygonType, POLY_FT4>::value)

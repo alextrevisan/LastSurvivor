@@ -36,7 +36,7 @@ OFILES		= $(addprefix build/,$(CFILES:.c=.o)) \
 
 # Project specific include and library directories
 # (use -I for include dirs, -L for library dirs)
-INCLUDE	 	+=	-I. -Iscenario -I$(ENGINE_DIR) -I$(UI_DIR)
+INCLUDE	 	+=	-I. -Iscenario -I$(ENGINE_DIR) -I$(UI_DIR) -Icppstdlib
 LIBDIRS		+=
 
 # Libraries to link

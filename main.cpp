@@ -86,7 +86,7 @@ MATRIX DrawSun(const MATRIX& mtx);
 
 int main() {
     graphics = new GraphClass(2048,65536);
-    
+    AmbientLightController::graphics = graphics;
     SVECTOR	rot = { 0 };			/* Rotation vector for Rotmatrix */
     VECTOR	pos = { 0, 0, 0 };	/* Translation vector for TransMatrix */
     
@@ -124,7 +124,7 @@ int main() {
     camera.SetPosition((11<<12)*512,-768<<12,(11<<12)*512);
     
 
-    int mapPosX=(0<<12), mapPosZ=(0<<12);
+    int mapPosX=(0<<12), mapPosZ=(8<<12);
     auto *map = new Map(graphics, mapPosX, mapPosZ);
 
 
@@ -258,7 +258,9 @@ int main() {
                 camera.Translate(0,gravity<<12,0);
         }
 
-        FntFlush(-1);		
+        FntFlush(-1);
+        //gte_SetFarColor(0, 0, 0);
+		//SetFogNearFar(250, 600, 240);
         
         joystick.Update();
         graphics->Display<false>();
@@ -318,9 +320,10 @@ MATRIX DrawSkyBox(const MATRIX& mtx)
         skyTickTimer = 0;
                                                               //<<8 = ~30 min complete day cicle
     const auto color = AmbientLightController::executeWithTime(skyTickTimer);
-
-    gte_SetBackColor(color.r, color.g, color.b);
-
+    
+    gte_SetBackColor(190,180,127);
+    
+    
     //FntPrint(-1, "time=%d\n", skyTickTimer	);
     //FntPrint(-1, "rgb=%d,%d,%d\n", color.r, color.g, color.b);
     //FntPrint(-1, "uv=%d,%d\n", sky.uvs[0].vx, sky.uvs[0].vy);
@@ -330,7 +333,7 @@ MATRIX DrawSkyBox(const MATRIX& mtx)
     
     PushMatrix();
         gte_SetTransMatrix( &omtx );
-        graphics->DrawObject3D<skysphere>(sky);
+        //graphics->DrawObject3D<skysphere>(sky);
         graphics->DrawObject3D<hills>(hill);
         const auto sunMTX = DrawSun(mtx);
     PopMatrix();
