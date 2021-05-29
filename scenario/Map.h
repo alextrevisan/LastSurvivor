@@ -28,7 +28,7 @@ TIM_IMAGE grass_tile01_texture;
 class Map
 {
 private:
-    static constexpr int MAP_SIZE = 24;
+    static constexpr int MAP_SIZE = 32;
     static constexpr int CENTER_X = MAP_SIZE >> 1;
     static constexpr int CENTER_Z = MAP_SIZE >> 1;
 
@@ -167,7 +167,7 @@ private:
     inline int GenerateHeight(int x, int z)
     {
         constexpr PerlinNoise perlin;
-        return (((perlin.noise2d(x << 12, z << 12) << 2) + (perlin.noise2d((x << 13) << 1, (z << 13) << 1) << 1) + perlin.noise2d((x << 13) << 2, (z << 13) << 2))) << 1;
+        return (((perlin.noise2d(x << 12, z << 12) << 2) + (perlin.noise2d((x << 13) << 1, (z << 13) << 1) << 1) + perlin.noise2d((x << 13) << 2, (z << 13) << 2)));
     }
 
     inline void OffsetMapLeft()

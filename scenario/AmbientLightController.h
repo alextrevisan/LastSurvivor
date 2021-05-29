@@ -15,7 +15,7 @@ enum TimeOfDay {
 
 struct AmbientLightController
 {
-    
+    static GraphClass* graphics;
     struct math
     {
         static inline int lerp( const int min, const int max, const int steps, const int current)
@@ -51,8 +51,8 @@ struct AmbientLightController
                 {
                     // Day time colour start to orange end
                     const int timeLerp = TimeLerp (time, SUN_SUNSET_START, SUN_SUNSET_SWITCH);
-                    constexpr CVECTOR start{191>>1,182>>1,127>>1};//255,255,255
-                    constexpr CVECTOR end{127>>1,102>>1, 38>>1};            
+                    constexpr CVECTOR start{191,182,127};//255,255,255
+                    constexpr CVECTOR end{127,102, 38};            
                     color = BlendColour(start, end, SUN_SUNSET_SWITCH - SUN_SUNSET_START, timeLerp);
                     return color;
                     //{255,255,255}, {127,102, 38}, {time,time,time}
@@ -62,9 +62,14 @@ struct AmbientLightController
                 {
                     // Orange start to night time colour end
                     const int timeLerp = TimeLerp (time, SUN_SUNSET_SWITCH, SUN_SUNSET_END);
-                    constexpr CVECTOR start{127>>1,102>>1, 38>>1};
-                    constexpr CVECTOR end{14,8,43};//25,102,229
+                    constexpr CVECTOR start{127,102, 38};
+                    constexpr CVECTOR end{25,102,229};//end{25,102,229};//25,102,229
                     color = BlendColour(start, end, SUN_SUNSET_END - SUN_SUNSET_SWITCH, timeLerp);
+                    const auto skyColor = BlendColour({127,127,255}, {14,8,43}, SUN_SUNSET_END - SUN_SUNSET_SWITCH, timeLerp);
+                    const auto farColor = BlendColour({127,127,127}, {14,8,43}, SUN_SUNSET_END - SUN_SUNSET_SWITCH, timeLerp);
+                    const auto playerColor = BlendColour({191,182,127}, {191,182,127 }, SUN_SUNSET_END - SUN_SUNSET_SWITCH, timeLerp);
+                    graphics->setClearColor(skyColor);
+                    gte_SetFarColor(farColor.r, farColor.g, farColor.b);
                     return color;
                 }
             }
@@ -76,16 +81,20 @@ struct AmbientLightController
                     const int timeLerp = TimeLerp (time, SUN_SUNRISE_START, SUN_SUNRISE_SWITCH);
                     //25 102 229
                     constexpr CVECTOR start{14,8,43};
-                    constexpr CVECTOR end{127>>1,127>>1,127>>1};            
+                    constexpr CVECTOR end{127,127,127};            
                     color = BlendColour(start, end, SUN_SUNRISE_SWITCH - SUN_SUNRISE_START, timeLerp);
+                    const auto skyColor = BlendColour({14,8,43}, {127,127,255}, SUN_SUNRISE_SWITCH - SUN_SUNRISE_START, timeLerp);
+                    const auto farColor = BlendColour({14,8,43}, {127,127,127}, SUN_SUNSET_END - SUN_SUNSET_SWITCH, timeLerp);
+                    graphics->setClearColor(skyColor);
+                    gte_SetFarColor(farColor.r, farColor.g, farColor.b);
                     return color;
                 }
                 else
                 {
                     // Pink/purple start to day time colour end
                     const int timeLerp = TimeLerp (time, SUN_SUNRISE_SWITCH, SUN_SUNRISE_END);
-                    constexpr CVECTOR start{127>>1, 127>>1, 127>>1};
-                    constexpr CVECTOR end{191>>1,182>>1,127>>1};//255,255,255
+                    constexpr CVECTOR start{127, 127, 127};
+                    constexpr CVECTOR end{191,182,127};//255,255,255
                     color = BlendColour(start, end, SUN_SUNRISE_END - SUN_SUNRISE_SWITCH, timeLerp);
                     return color;
                 }
@@ -94,16 +103,18 @@ struct AmbientLightController
             {
                 // Night time //25 102 229
                 return {14,8,43};
+                
             }
         }
         else
         {
             // Day time //255,255,255
-            return {191>>1,182>>1,127>>1};
+            return {191,182,127};
         }
         return color;
     }
 };
 
 CVECTOR AmbientLightController::color = {0};
+GraphClass* AmbientLightController::graphics = nullptr;
 #endif //_AMBIENT_LIGHT_CONTROLLER_H_
